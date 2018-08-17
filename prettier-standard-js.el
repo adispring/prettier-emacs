@@ -1,4 +1,4 @@
-;;; prettier-js.el --- Minor mode to format JS code on file save
+;;; prettier-standard-js.el --- Minor mode to format JS code on file save
 
 ;; Version: 0.1.0
 
@@ -33,58 +33,58 @@
 
 ;; Author: James Long and contributors
 ;; Created: 10 January 2017
-;; Url: https://github.com/prettier/prettier-emacs
+;; Url: https://github.com/sheerun/prettier-standard
 ;; Keywords: convenience wp edit js
 
 ;; This file is not part of GNU Emacs.
 
 ;;; Commentary:
-;; Formats your JavaScript code using 'prettier' on file save.
+;; Formats your JavaScript code using 'prettier-standard' on file save.
 
 ;;; Code:
 
-(defgroup prettier-js nil
+(defgroup prettier-standard-js nil
   "Minor mode to format JS code on file save"
   :group 'languages
-  :prefix "prettier-js"
-  :link '(url-link :tag "Repository" "https://github.com/prettier/prettier"))
+  :prefix "prettier-standard-js"
+  :link '(url-link :tag "Repository" "https://github.com/sheerun/prettier-standard"))
 
-(defcustom prettier-js-command "prettier"
-  "The 'prettier' command."
+(defcustom prettier-standard-js-command "prettier-standard"
+  "The 'prettier-standard' command."
   :type 'string
-  :group 'prettier-js)
+  :group 'prettier-standard-js)
 
-(defcustom prettier-js-args '()
-  "List of args to send to prettier command."
+(defcustom prettier-standard-js-args '()
+  "List of args to send to prettier-standard command."
   :type '(repeat string)
-  :group 'prettier-js)
+  :group 'prettier-standard-js)
 
-(defcustom prettier-js-show-errors 'buffer
-    "Where to display prettier error output.
+(defcustom prettier-standard-js-show-errors 'buffer
+    "Where to display prettier-standard error output.
 It can either be displayed in its own buffer, in the echo area, or not at all.
 Please note that Emacs outputs to the echo area when writing
-files and will overwrite prettier's echo output if used from inside
+files and will overwrite prettier-standard's echo output if used from inside
 a `before-save-hook'."
     :type '(choice
             (const :tag "Own buffer" buffer)
             (const :tag "Echo area" echo)
             (const :tag "None" nil))
-      :group 'prettier-js)
+      :group 'prettier-standard-js)
 
-(defcustom prettier-js-width-mode nil
+(defcustom prettier-standard-js-width-mode nil
   "Specify width when formatting buffer contents."
   :type '(choice
           (const :tag "Window width" window)
           (const :tag "Fill column" fill)
           (const :tag "None" nil))
-  :group 'prettier-js)
+  :group 'prettier-standard-js)
 
-(defun prettier-js--goto-line (line)
+(defun prettier-standard-js--goto-line (line)
   "Move cursor to line LINE."
   (goto-char (point-min))
     (forward-line (1- line)))
 
-(defun prettier-js--apply-rcs-patch (patch-buffer)
+(defun prettier-standard-js--apply-rcs-patch (patch-buffer)
   "Apply an RCS-formatted diff from PATCH-BUFFER to the current buffer."
   (let ((target-buffer (current-buffer))
         ;; Relative offset between buffer line numbers and line numbers
@@ -103,7 +103,7 @@ a `before-save-hook'."
         (goto-char (point-min))
         (while (not (eobp))
           (unless (looking-at "^\\([ad]\\)\\([0-9]+\\) \\([0-9]+\\)")
-            (error "Invalid rcs patch or internal error in prettier-js--apply-rcs-patch"))
+            (error "Invalid rcs patch or internal error in prettier-standard-js--apply-rcs-patch"))
           (forward-line)
           (let ((action (match-string 1))
                 (from (string-to-number (match-string 2)))
@@ -120,31 +120,31 @@ a `before-save-hook'."
                     (insert text)))))
              ((equal action "d")
               (with-current-buffer target-buffer
-                (prettier-js--goto-line (- from line-offset))
+                (prettier-standard-js--goto-line (- from line-offset))
                 (setq line-offset (+ line-offset len))
                 (let ((beg (point)))
                   (forward-line len)
                   (delete-region (point) beg))))
              (t
-              (error "Invalid rcs patch or internal error in prettier-js--apply-rcs-patch")))))))))
+              (error "Invalid rcs patch or internal error in prettier-standard-js--apply-rcs-patch")))))))))
 
-(defun prettier-js--process-errors (filename errorfile errbuf)
+(defun prettier-standard-js--process-errors (filename errorfile errbuf)
   "Process errors for FILENAME, using an ERRORFILE and display the output in ERRBUF."
   (with-current-buffer errbuf
-    (if (eq prettier-js-show-errors 'echo)
+    (if (eq prettier-standard-js-show-errors 'echo)
         (progn
           (message "%s" (buffer-string))
-          (prettier-js--kill-error-buffer errbuf))
+          (prettier-standard-js--kill-error-buffer errbuf))
       (insert-file-contents errorfile nil nil nil)
-      ;; Convert the prettier stderr to something understood by the compilation mode.
+      ;; Convert the prettier-standard stderr to something understood by the compilation mode.
       (goto-char (point-min))
-      (insert "prettier errors:\n")
+      (insert "prettier-standard errors:\n")
       (while (search-forward-regexp "^stdin" nil t)
         (replace-match (file-name-nondirectory filename)))
       (compilation-mode)
       (display-buffer errbuf))))
 
-(defun prettier-js--kill-error-buffer (errbuf)
+(defun prettier-standard-js--kill-error-buffer (errbuf)
   "Kill buffer ERRBUF."
   (let ((win (get-buffer-window errbuf)))
     (if win
@@ -153,22 +153,22 @@ a `before-save-hook'."
         (erase-buffer))
       (kill-buffer errbuf))))
 
-(defun prettier-js ()
-   "Format the current buffer according to the prettier tool."
+(defun prettier-standard-js ()
+   "Format the current buffer according to the prettier-standard tool."
    (interactive)
    (let* ((ext (file-name-extension buffer-file-name t))
-          (bufferfile (make-temp-file "prettier" nil ext))
-          (outputfile (make-temp-file "prettier" nil ext))
-          (errorfile (make-temp-file "prettier" nil ext))
-          (errbuf (if prettier-js-show-errors (get-buffer-create "*prettier errors*")))
-          (patchbuf (get-buffer-create "*prettier patch*"))
+          (bufferfile (make-temp-file "prettier-standard" nil ext))
+          (outputfile (make-temp-file "prettier-standard" nil ext))
+          (errorfile (make-temp-file "prettier-standard" nil ext))
+          (errbuf (if prettier-standard-js-show-errors (get-buffer-create "*prettier-standard errors*")))
+          (patchbuf (get-buffer-create "*prettier-standard patch*"))
           (coding-system-for-read 'utf-8)
           (coding-system-for-write 'utf-8)
           (width-args
            (cond
-            ((equal prettier-js-width-mode 'window)
+            ((equal prettier-standard-js-width-mode 'window)
              (list "--print-width" (number-to-string (window-body-width))))
-            ((equal prettier-js-width-mode 'fill)
+            ((equal prettier-standard-js-width-mode 'fill)
              (list "--print-width" (number-to-string fill-column)))
             (t
              '()))))
@@ -183,17 +183,17 @@ a `before-save-hook'."
            (with-current-buffer patchbuf
              (erase-buffer))
            (if (zerop (apply 'call-process
-                             prettier-js-command bufferfile (list (list :file outputfile) errorfile)
-                             nil (append prettier-js-args width-args (list "--stdin" "--stdin-filepath" buffer-file-name))))
+                             prettier-standard-js-command bufferfile (list (list :file outputfile) errorfile)
+                             nil (append prettier-standard-js-args width-args (list "--stdin" "--stdin-filepath" buffer-file-name))))
                (progn
                  (call-process-region (point-min) (point-max) "diff" nil patchbuf nil "-n" "--strip-trailing-cr" "-"
                                       outputfile)
-                 (prettier-js--apply-rcs-patch patchbuf)
-                 (message "Applied prettier with args `%s'" prettier-js-args)
-                 (if errbuf (prettier-js--kill-error-buffer errbuf)))
-             (message "Could not apply prettier")
+                 (prettier-standard-js--apply-rcs-patch patchbuf)
+                 (message "Applied prettier-standard with args `%s'" prettier-standard-js-args)
+                 (if errbuf (prettier-standard-js--kill-error-buffer errbuf)))
+             (message "Could not apply prettier-standard")
              (if errbuf
-                 (prettier-js--process-errors (buffer-file-name) errorfile errbuf))
+                 (prettier-standard-js--process-errors (buffer-file-name) errorfile errbuf))
              ))
        (kill-buffer patchbuf)
        (delete-file errorfile)
@@ -201,13 +201,13 @@ a `before-save-hook'."
        (delete-file outputfile))))
 
 ;;;###autoload
-(define-minor-mode prettier-js-mode
-  "Runs prettier on file save when this mode is turned on"
+(define-minor-mode prettier-standard-js-mode
+  "Runs prettier-standard on file save when this mode is turned on"
   :lighter " Prettier"
   :global nil
-  (if prettier-js-mode
-      (add-hook 'before-save-hook 'prettier-js nil 'local)
-    (remove-hook 'before-save-hook 'prettier-js 'local)))
+  (if prettier-standard-js-mode
+      (add-hook 'before-save-hook 'prettier-standard-js nil 'local)
+    (remove-hook 'before-save-hook 'prettier-standard-js 'local)))
 
-(provide 'prettier-js)
-;;; prettier-js.el ends here
+(provide 'prettier-standard-js)
+;;; prettier-standard-js.el ends here
